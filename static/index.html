@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kurir Paket</title>
+  <style>
+    table { border-collapse: collapse; margin-top: 20px; }
+    td { width: 30px; height: 30px; text-align: center; vertical-align: middle; border: 1px solid #aaa; }
+    .agent { background-color: skyblue; font-weight: bold; }
+    .pickup { background-color: orange; }
+    .drop { background-color: green; }
+    .delivered { background-color: lightgray; }
+    .obstacle { background-color: black; color: white; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>📦 Kurir Paket</h2>
+  <h3>➕ Tambah Kurir</h3>
+  <form onsubmit="registerAgent(); return false;">
+    <label>ID kurir: </label>
+    <input type="text" id="agentIdInput" required />
+    <button type="submit">Tambah Kurir</button>
+  </form>
+  <h3>📦 Tambah Paket</h3>
+  <form onsubmit="addPaket(); return false;">
+    <label>ID Paket:</label>
+    <input type="text" id="paketId" required />
+    <label>Pickup (x,y):</label>
+    <input type="number" id="pickupX" min="0" max="9" required />
+    <input type="number" id="pickupY" min="0" max="9" required />
+    <label>Drop (x,y):</label>
+    <input type="number" id="dropX" min="0" max="9" required />
+    <input type="number" id="dropY" min="0" max="9" required />
+    <button type="submit">Tambah Paket</button>
+  </form>
+  <h3>🎯 Pilih Kurir & Gerakkan</h3>
+  <label for="selectedAgent">Pilih Kurir:</label>
+  <select id="selectedAgent"></select>
+  <div style="margin-top: 10px;">
+    <button onclick="moveAgent('up')">⬆️ Atas</button><br />
+    <button onclick="moveAgent('left')">⬅️ Kiri</button>
+    <button onclick="moveAgent('right')">➡️ Kanan</button><br />
+    <button onclick="moveAgent('down')">⬇️ Bawah</button>
+  </div>
+  <div style="margin-top: 10px;">
+    <button onclick="paketAction('pickup')">📦 Ambil Paket</button>
+    <button onclick="paketAction('deliver')">📬 Antar Paket</button>
+  </div>
+  <br>
+  <button onclick="loadGrid()">🔄 Refresh</button>
+  <button onclick="resetSystem()">🧹 Reset</button>
+  <h3>🌐 Ukuran Peta</h3>
+  <select id="gridSizeSelect" onchange="changeGridSize()">
+    <option value="10">10x10</option>
+    <option value="5">5x5</option>
+  </select>
+  <div id="grid"></div>
+
+  <script>
+    let gridSize = 10;
+
+    async function loadGrid() {
+      const res = await fetch("/status");
+      const data = await res.json();
+      gridSize = parseInt(document.getElementById("gridSizeSelect").value);
+      const grid = Array.from({ length: gridSize }, () =>
+        Array.from({ length: gridSize }, () => "")
+      );
+
+      data.pakets.forEach(p => {
+        if (p.status === "waiting") {
+          grid[p.pickup_x][p.pickup_y] = "📦";
+        } else if (p.status === "delivered") {
+          grid[p.drop_x][p.drop_y] = "✅";
+        }
+      });
+
+      data.obstacles.forEach(([x,y]) => {
+        grid[x][y] = "🧱";
+      });
+
+      data.agents.forEach(a => {
+        grid[a.x][a.y] = a.id;
+      });
+
+      let html = "<table>";
+      for (let i = 0; i < gridSize; i++) {
+        html += "<tr>";
+        for (let j = 0; j < gridSize; j++) {
+          const val = grid[i][j];
+          let cls = "";
+          if (val.startsWith("kurir")) cls = "agent";
+          else if (val === "📦") cls = "pickup";
+          else if (val === "✅") cls = "delivered";
+          else if (val == "🧱") cls = "obstacle";
+          html += `<td class="${cls}">${val}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</table>";
+      document.getElementById("grid").innerHTML = html;
+
+      updateAgentDropdown(data.agents);
+    }
+
+    function updateAgentDropdown(agentList) {
+      const select = document.getElementById("selectedAgent");
+      const selectedBefore = select.value;
+      select.innerHTML = "";
+      agentList.forEach(agent => {
+        const opt = document.createElement("option");
+        opt.value = agent.id;
+        opt.textContent = agent.id;
+        select.appendChild(opt);
+      });
+      if (agentList.some(a => a.id == selectedBefore)) {
+        select.value = selectedBefore;
+      }
+    }
+
+    window.onload = loadGrid;
+
+    async function resetSystem() {
+      const res = await fetch("/reset", {
+        method: "POST"
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadGrid();
+    }
+
+    async function registerAgent() {
+      const id = document.getElementById("agentIdInput").value.trim();
+      if (!id) return alert("ID kurir tidak boleh kosong.");
+
+      const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        loadGrid();
+        document.getElementById("agentIdInput").value = "";
+      } else {
+        alert("Gagal menambahkan kurir: " + data.detail);
+      }
+    }
+
+    async function addPaket() {
+      const id = document.getElementById("paketId").value.trim();
+      const pickup_x = parseInt(document.getElementById("pickupX").value);
+      const pickup_y = parseInt(document.getElementById("pickupY").value);
+      const drop_x = parseInt(document.getElementById("dropX").value);
+      const drop_y = parseInt(document.getElementById("dropY").value);
+
+      if (!id || isNaN(pickup_x) || isNaN(pickup_y) || isNaN(drop_x) || isNaN(drop_y)) {
+        alert("Lengkapi semua data paket!");
+        return;
+      }
+    
+      const res = await fetch("/add_paket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, pickup_x, pickup_y, drop_x, drop_y })
+      });
+    
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Paket ${data.paket_id} berhasil ditambahkan`);
+        loadGrid();
+        document.getElementById("paketId").value = "";
+        document.getElementById("pickupX").value = "";
+        document.getElementById("pickupY").value = "";
+        document.getElementById("dropX").value = "";
+        document.getElementById("dropY").value = "";
+      } else {
+        alert("Gagal tambah paket: " + data.detail);
+      }
+    }
+
+    async function moveAgent(direction) {
+      const id = document.getElementById("selectedAgent").value;
+      if (!id) return alert("Pilih kurir terlebih dahulu!");
+
+      const res = await fetch("/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, direction })
+      });
+    
+      const data = await res.json();
+      if (res.ok) {
+        loadGrid();
+      } else {
+        alert("Gagal gerak: " + data.detail);
+      }
+    }
+
+    async function paketAction(action) {
+      const id = document.getElementById("selectedAgent").value;
+      if (!id) return alert("Pilih kurir terlebih dahulu!");
+
+      const res = await fetch("/paket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: id, action })
+      });
+    
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message + (data.paket_id ? ` (ID: ${data.paket_id})` : ""));
+        loadGrid();
+      } else {
+        alert("Gagal " + action + ": " + data.detail);
+      }
+    }
+
+    async function changeGridSize() {
+      const size = parseInt(document.getElementById("gridSizeSelect").value);
+      const res = await fetch("/grid_size", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size })
+      });
+    
+      const data = await res.json();
+      if (res.ok) {
+        loadGrid();
+      } else {
+        alert("Gagal ubah ukuran peta: " + data.detail);
+      }
+    }
+  </script>
+</body>
+</html>
