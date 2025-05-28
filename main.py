@@ -98,3 +98,27 @@ def change_grid_size(req: GridSizeRequest):
     database.set_grid_size(req.size)
     database.reset_system()
     return {"message": f"Ukuran peta diubah menjadi {req.size}x{req.size} dan sistem di-reset."}
+
+@app.get("/metrik")
+def get_metrics():
+    durasi = []
+    for p_id, times in database.paket_timestamps.items():
+        if "pickup_time" in times and "deliver_time" in times:
+            durasi.append(times["deliver_time"] - times["pickup_time"])
+
+    avg_durasi = sum(durasi)/len(durasi) if durasi else 0
+    avg_steps = sum(database.agent_steps.values()) / len(database.agent_steps) if database.agent_steps else 0
+
+    return {
+        "total_paket": len(database.paket_timestamps),
+        "paket_selesai": len(durasi),
+        "rata_rata_waktu_pengiriman": round(avg_durasi, 2),
+        "rata_rata_langkah_per_agen": round(avg_steps, 2),
+        "tabrakan_dihindari": database.collisions_avoided,
+        "log_aksi": database.logs[-10:]
+    }
+
+@app.post("/tick_smart")
+def run_smart_tick():
+    result = database.tick_smart()
+    return {"tick_log": result}
