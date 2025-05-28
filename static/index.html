@@ -48,6 +48,11 @@
   <br>
   <button onclick="loadGrid()">🔄 Refresh</button>
   <button onclick="resetSystem()">🧹 Reset</button>
+  <br>
+  <button onclick="runSmartTick()">⏱ Jalankan</button>
+  <h3>📊 Metrik Evaluasi</h3>
+  <button onclick="loadMetrik()">🔍 Tampilkan Metrik</button>
+  <div id="metrik"></div>
   <h3>🌐 Ukuran Peta</h3>
   <select id="gridSizeSelect" onchange="changeGridSize()">
     <option value="10">10x10</option>
@@ -230,6 +235,32 @@
       } else {
         alert("Gagal ubah ukuran peta: " + data.detail);
       }
+    }
+
+    async function runSmartTick() {
+      const res = await fetch("/tick_smart", {
+        method: "POST"
+      });
+      const data = await res.json();
+      console.log(data.tick_log);
+      loadGrid();
+    }
+
+    async function loadMetrik() {
+      const res = await fetch("/metrik");
+      const data = await res.json();
+
+      const html = `
+        <ul>
+          <li><strong>Total Paket:</strong> ${data.total_paket}</li>
+          <li><strong>Paket Selesai:</strong> ${data.paket_selesai}</li>
+          <li><strong>Rata-rata Waktu Pengiriman:</strong> ${data.rata_rata_waktu_pengiriman} detik</li>
+          <li><strong>Rata-rata Langkah per Agen:</strong> ${data.rata_rata_langkah_per_agen}</li>
+          <li><strong>Tabrakan Dihindari:</strong> ${data.tabrakan_dihindari}</li>
+        </ul>
+      `;
+      
+      document.getElementById("metrik").innerHTML = html;
     }
   </script>
 </body>
