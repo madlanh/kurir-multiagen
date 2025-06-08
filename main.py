@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from models import Agent, RegisterRequest, RegisterResponse, MoveRequest, MoveResponse, PaketActionRequest, PaketActionResponse, SystemStatus, AgentStatus, PaketStatus, AddPaketRequest, AddPaketResponse, GridSizeRequest
 import database
-from database import handle_paket_action, add_new_paket
+from database import handle_paket_action
 from visualisasi import draw_grid
 
 app = FastAPI()
@@ -65,7 +65,8 @@ def get_system_status():
     return SystemStatus(
         agents=agent_list,
         pakets=paket_list,
-        obstacles=list(database.obstacles)
+        obstacles=list(database.obstacles),
+        agent_paths=database.agent_paths
     )
 
 @app.get("/map")
@@ -83,12 +84,22 @@ def add_paket(req: AddPaketRequest):
         raise HTTPException(status_code=400, detail="Paket sudah ada.")
     
     paket = database.add_new_paket(req)
-    return AddPaketResponse(message="Paket berhasil ditambahkan.", paket_id=paket.id)
+
+    if paket is None:
+        raise HTTPException(status_code=500, detail="Tidak ada cukup ruang di peta.")
+
+    return AddPaketResponse(
+        message="Paket berhasil ditambahkan.",
+        paket_id=paket.id,
+        pickup_x=paket.pickup_x,
+        pickup_y=paket.pickup_y,
+        drop_x=paket.drop_x,
+        drop_y=paket.drop_y
+    )
 
 @app.post("/reset")
 def reset_simulasi():
-    database.agents.clear()
-    database.pakets.clear()
+    database.reset_system()
     return {"message": "Sistem berhasil direset."}
 
 @app.post("/grid_size")
