@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 
 class Agent(BaseModel):
     id: str
@@ -60,17 +60,18 @@ class SystemStatus(BaseModel):
     agents: List[AgentStatus]
     pakets: List[PaketStatus]
     obstacles: List[Tuple[int,int]]
+    agent_paths: Optional[Dict[str, List[Tuple[int, int]]]] = None
 
 class AddPaketRequest(BaseModel):
     id: str
-    pickup_x: int
-    pickup_y: int
-    drop_x: int
-    drop_y: int
 
 class AddPaketResponse(BaseModel):
     message: str
     paket_id: str
+    pickup_x: int
+    pickup_y: int
+    drop_x: int
+    drop_y: int
 
 class GridSizeRequest(BaseModel):
     size: int
