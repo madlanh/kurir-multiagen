@@ -3,110 +3,294 @@
 <head>
   <title>Kurir Paket</title>
   <style>
-    table { border-collapse: collapse; margin-top: 20px; }
-    td { width: 30px; height: 30px; text-align: center; vertical-align: middle; border: 1px solid #aaa; }
-    .agent { background-color: skyblue; font-weight: bold; }
-    .pickup { background-color: orange; }
-    .drop { background-color: green; }
-    .delivered { background-color: lightgray; }
-    .obstacle { background-color: black; color: white; font-weight: bold; }
+    body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+    h2, h3 { color: #333; }
+    form, div { margin-bottom: 15px; padding:10px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    label { margin-right: 5px; }
+    input[type="text"], input[type="number"], select {
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #5cb85c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #4cae4c;
+    }
+    button.control-button {
+        background-color: #337ab7;
+        margin: 2px;
+    }
+    button.control-button:hover {
+        background-color: #286090;
+    }
+    button.action-button {
+        background-color: #f0ad4e;
+    }
+    button.action-button:hover {
+        background-color: #ec971f;
+    }
+    #gridCanvas {
+      margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    #metrik ul { list-style-type: none; padding-left: 0; }
+    #metrik li { background-color: #e9e9e9; margin-bottom: 5px; padding: 8px; border-radius: 4px; }
   </style>
 </head>
 <body>
-  <h2>📦 Kurir Paket</h2>
-  <h3>➕ Tambah Kurir</h3>
-  <form onsubmit="registerAgent(); return false;">
-    <label>ID kurir: </label>
-    <input type="text" id="agentIdInput" required />
-    <button type="submit">Tambah Kurir</button>
-  </form>
-  <h3>📦 Tambah Paket</h3>
-  <form onsubmit="addPaket(); return false;">
-    <label>ID Paket:</label>
-    <input type="text" id="paketId" required />
-    <label>Pickup (x,y):</label>
-    <input type="number" id="pickupX" min="0" max="9" required />
-    <input type="number" id="pickupY" min="0" max="9" required />
-    <label>Drop (x,y):</label>
-    <input type="number" id="dropX" min="0" max="9" required />
-    <input type="number" id="dropY" min="0" max="9" required />
-    <button type="submit">Tambah Paket</button>
-  </form>
-  <h3>🎯 Pilih Kurir & Gerakkan</h3>
-  <label for="selectedAgent">Pilih Kurir:</label>
-  <select id="selectedAgent"></select>
-  <div style="margin-top: 10px;">
-    <button onclick="moveAgent('up')">⬆️ Atas</button><br />
-    <button onclick="moveAgent('left')">⬅️ Kiri</button>
-    <button onclick="moveAgent('right')">➡️ Kanan</button><br />
-    <button onclick="moveAgent('down')">⬇️ Bawah</button>
+  <h2>📦 Simulasi Kurir Paket</h2>
+
+  <div>
+    <h3>➕ Tambah Kurir</h3>
+    <form onsubmit="registerAgent(); return false;">
+      <label for="agentIdInput">ID kurir:</label>
+      <input type="text" id="agentIdInput" required />
+      <button type="submit">Tambah Kurir</button>
+    </form>
   </div>
-  <div style="margin-top: 10px;">
-    <button onclick="paketAction('pickup')">📦 Ambil Paket</button>
-    <button onclick="paketAction('deliver')">📬 Antar Paket</button>
+
+  <div>
+    <h3>📦 Tambah Paket</h3>
+    <form onsubmit="addPaket(); return false;">
+      <label for="paketId">ID Paket:</label>
+      <input type="text" id="paketId" required />
+      <button type="submit">Tambah Paket</button>
+    </form>
   </div>
-  <br>
-  <button onclick="loadGrid()">🔄 Refresh</button>
-  <button onclick="resetSystem()">🧹 Reset</button>
-  <br>
-  <button onclick="runSmartTick()">⏱ Jalankan</button>
-  <h3>📊 Metrik Evaluasi</h3>
-  <button onclick="loadMetrik()">🔍 Tampilkan Metrik</button>
-  <div id="metrik"></div>
-  <h3>🌐 Ukuran Peta</h3>
-  <select id="gridSizeSelect" onchange="changeGridSize()">
-    <option value="10">10x10</option>
-    <option value="5">5x5</option>
-  </select>
-  <div id="grid"></div>
+  <div>
+    <h3>🎯 Pilih Kurir & Gerakkan</h3>
+    <label for="selectedAgent">Pilih Kurir:</label>
+    <select id="selectedAgent"></select>
+    <div style="margin-top: 10px;">
+      <button onclick="moveAgent('up')" class="control-button">⬆️ Atas</button><br />
+      <button onclick="moveAgent('left')" class="control-button">⬅️ Kiri</button>
+      <button onclick="moveAgent('right')" class="control-button">➡️ Kanan</button><br />
+      <button onclick="moveAgent('down')" class="control-button">⬇️ Bawah</button>
+    </div>
+    <div style="margin-top: 10px;">
+      <button onclick="paketAction('pickup')" class="control-button">📦 Ambil Paket</button>
+      <button onclick="paketAction('deliver')" class="control-button">📬 Antar Paket</button>
+    </div>
+  </div>
+
+  <div>
+    <h3>⚙️ Kontrol Simulasi</h3>
+    <button onclick="loadGrid()" class="action-button">🔄 Refresh Peta</button>
+    <button onclick="resetSystem()" class="action-button">🧹 Reset Sistem</button>
+    <button onclick="runSmartTick()" class="action-button">⏱ Jalankan</button>
+  </div>
+
+  <div>
+    <h3>🌐 Ukuran Peta</h3>
+    <select id="gridSizeSelect" onchange="changeGridSize()">
+      <option value="10">10x10</option>
+      <option value="5">5x5</option>
+    </select>
+  </div>
+
+  <canvas id="gridCanvas"></canvas>
+
+  <div>
+    <h3>📊 Metrik Evaluasi</h3>
+    <button onclick="loadMetrik()" class="action-button">🔍 Tampilkan Metrik</button>
+    <div id="metrik"></div>
+  </div>
 
   <script>
     let gridSize = 10;
+    let cellSize = 30;
 
     async function loadGrid() {
       const res = await fetch("/status");
       const data = await res.json();
       gridSize = parseInt(document.getElementById("gridSizeSelect").value);
-      const grid = Array.from({ length: gridSize }, () =>
-        Array.from({ length: gridSize }, () => "")
-      );
+      
+      const canvas = document.getElementById("gridCanvas");
+      const ctx = canvas.getContext("2d");
 
-      data.pakets.forEach(p => {
-        if (p.status === "waiting") {
-          grid[p.pickup_x][p.pickup_y] = "📦";
-        } else if (p.status === "delivered") {
-          grid[p.drop_x][p.drop_y] = "✅";
+      cellSize = Math.min(30, Math.floor(600 / gridSize)); 
+      canvas.width = gridSize * cellSize;
+      canvas.height = gridSize * cellSize;
+
+      const colors = {
+        gridLine: '#e0e0e0',
+        obstacle: '#424242',
+        agentDefault: '#2196F3', 
+        agentBorder: '#1976D2',
+        paketWaiting: '#FF9800',
+        paketCarried: '#AED581',
+        paketDelivered: '#BDBDBD',
+        textDark: '#212121',
+        textLight: '#FFFFFF',
+        pathBaseColors: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#00ACC1']
+      };
+
+      function getAgentColor(agentId, index) {
+        if (data.agents && data.agents.find(a => a.id === agentId)) {
+             return colors.pathBaseColors[index % colors.pathBaseColors.length];
         }
-      });
-
-      data.obstacles.forEach(([x,y]) => {
-        grid[x][y] = "🧱";
-      });
-
-      data.agents.forEach(a => {
-        grid[a.x][a.y] = a.id;
-      });
-
-      let html = "<table>";
-      for (let i = 0; i < gridSize; i++) {
-        html += "<tr>";
-        for (let j = 0; j < gridSize; j++) {
-          const val = grid[i][j];
-          let cls = "";
-          if (val.startsWith("kurir")) cls = "agent";
-          else if (val === "📦") cls = "pickup";
-          else if (val === "✅") cls = "delivered";
-          else if (val == "🧱") cls = "obstacle";
-          html += `<td class="${cls}">${val}</td>`;
-        }
-        html += "</tr>";
+        return colors.agentDefault;
       }
-      html += "</table>";
-      document.getElementById("grid").innerHTML = html;
 
-      updateAgentDropdown(data.agents);
+
+      function drawCell(x_grid, y_grid, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(y_grid * cellSize, x_grid * cellSize, cellSize, cellSize);
+      }
+      
+      function drawTextInCell(x_grid, y_grid, text, textColor = colors.textDark, font = 'bold 10px Arial') {
+          ctx.fillStyle = textColor;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = font;
+          const textX = y_grid * cellSize + cellSize / 2;
+          const textY = x_grid * cellSize + cellSize / 2;
+          ctx.fillText(text, textX, textY);
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cellSize, 0);
+        ctx.lineTo(i * cellSize, canvas.height);
+        ctx.strokeStyle = colors.gridLine;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(canvas.width, i * cellSize);
+        ctx.strokeStyle = colors.gridLine;
+        ctx.stroke();
+      }
+      
+      let agentDisplayOrder = [];
+      if(data.agents) {
+        agentDisplayOrder = data.agents.map(a => a.id);
+      }
+
+
+      if (data.agent_paths) {
+        agentDisplayOrder.forEach((agentId, idx) => {
+          const path = data.agent_paths[agentId];
+          const pathColor = getAgentColor(agentId, idx);
+          if (path && path.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(path[0][1] * cellSize + cellSize / 2, path[0][0] * cellSize + cellSize / 2);
+            for (let k = 0; k < path.length - 1; k++) {
+              const startNode = path[k]; 
+              const endNode = path[k+1];   
+
+              if (startNode[0] === endNode[0] && startNode[1] === endNode[1]) continue;
+
+              const startX = startNode[1] * cellSize + cellSize / 2;
+              const startY = startNode[0] * cellSize + cellSize / 2;
+              const endX = endNode[1] * cellSize + cellSize / 2;
+              const endY = endNode[0] * cellSize + cellSize / 2;
+              
+              ctx.lineTo(endX, endY);
+            }
+            ctx.strokeStyle = pathColor;
+            ctx.lineWidth = Math.max(1, cellSize / 15);
+            ctx.stroke();
+            
+            const finalSegmentStart = path[path.length - 2];
+            const finalSegmentEnd = path[path.length - 1];
+            if (finalSegmentStart && finalSegmentEnd && (finalSegmentStart[0] !== finalSegmentEnd[0] || finalSegmentStart[1] !== finalSegmentEnd[1])) {
+                const startXArr = finalSegmentStart[1] * cellSize + cellSize / 2;
+                const startYArr = finalSegmentStart[0] * cellSize + cellSize / 2;
+                const endXArr = finalSegmentEnd[1] * cellSize + cellSize / 2;
+                const endYArr = finalSegmentEnd[0] * cellSize + cellSize / 2;
+
+                const angle = Math.atan2(endYArr - startYArr, endXArr - startXArr);
+                const headlen = Math.max(5, cellSize / 3);
+                ctx.beginPath();
+                ctx.moveTo(endXArr, endYArr);
+                ctx.lineTo(endXArr - headlen * Math.cos(angle - Math.PI / 7), endYArr - headlen * Math.sin(angle - Math.PI / 7));
+                ctx.lineTo(endXArr - headlen * Math.cos(angle + Math.PI / 7), endYArr - headlen * Math.sin(angle + Math.PI / 7));
+                ctx.closePath();
+                ctx.fillStyle = pathColor;
+                ctx.fill();
+            }
+          }
+        });
+      }
+
+      if (data.obstacles) {
+        data.obstacles.forEach(([x,y]) => {
+          if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            drawCell(x, y, colors.obstacle);
+          }
+        });
+      }
+      
+      if (data.pakets) {
+        data.pakets.forEach(p => {
+          let paketColor = colors.paketDelivered;
+          let paketChar = p.id.substring(0,1).toUpperCase();
+
+          if (p.status === "waiting") {
+            paketColor = colors.paketWaiting;
+            if (p.pickup_x >= 0 && p.pickup_x < gridSize && p.pickup_y >= 0 && p.pickup_y < gridSize) {
+              drawCell(p.pickup_x, p.pickup_y, paketColor);
+              drawTextInCell(p.pickup_x, p.pickup_y, paketChar, colors.textDark, `bold ${Math.max(8, cellSize/2.5)}px Arial`);
+            }
+          } else if (p.status === "picked_up" && p.carried_by && data.agents.find(ag => ag.id === p.carried_by)) {
+          } else if (p.status === "delivered") {
+             if (p.drop_x >= 0 && p.drop_x < gridSize && p.drop_y >= 0 && p.drop_y < gridSize) {
+              drawCell(p.drop_x, p.drop_y, paketColor);
+              drawTextInCell(p.drop_x, p.drop_y, paketChar, colors.textDark, `bold ${Math.max(8, cellSize/2.5)}px Arial`);
+            }
+          }
+        });
+      }
+      
+      if (data.agents) {
+        data.agents.forEach((a,idx) => {
+          if (a.x >= 0 && a.x < gridSize && a.y >= 0 && a.y < gridSize) {
+            const agentColor = getAgentColor(a.id, idx);
+            ctx.fillStyle = agentColor;
+            ctx.strokeStyle = colors.agentBorder;
+            ctx.lineWidth = Math.max(1, cellSize / 20);
+            
+            const agentX = a.y * cellSize + cellSize / 2;
+            const agentY = a.x * cellSize + cellSize / 2;
+            const agentRadius = cellSize * 0.35;
+
+            ctx.beginPath();
+            ctx.arc(agentX, agentY, agentRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            drawTextInCell(a.x, a.y, a.id.substring(0,1).toUpperCase(), colors.textLight, `bold ${Math.max(8, cellSize/2.2)}px Arial`);
+
+            const carriedPaket = data.pakets.find(pkt => pkt.carried_by === a.id && pkt.status === "picked_up");
+            if (carriedPaket) {
+                ctx.fillStyle = colors.paketCarried;
+                ctx.beginPath();
+                ctx.arc(agentX + agentRadius*0.5, agentY - agentRadius*0.5, agentRadius*0.4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = colors.textDark;
+                ctx.font = `bold ${Math.max(6, cellSize/3.5)}px Arial`;
+                ctx.fillText(carriedPaket.id.substring(0,1).toUpperCase(), agentX + agentRadius*0.5, agentY - agentRadius*0.5);
+            }
+          }
+        });
+      }
+      updateAgentDropdown(data.agents || []);
     }
-
+    
     function updateAgentDropdown(agentList) {
       const select = document.getElementById("selectedAgent");
       const selectedBefore = select.value;
@@ -119,6 +303,8 @@
       });
       if (agentList.some(a => a.id == selectedBefore)) {
         select.value = selectedBefore;
+      } else if (agentList.length > 0) {
+        select.value = agentList[0].id;
       }
     }
 
@@ -148,39 +334,30 @@
         loadGrid();
         document.getElementById("agentIdInput").value = "";
       } else {
-        alert("Gagal menambahkan kurir: " + data.detail);
+        alert("Gagal menambahkan kurir: " + (data.detail || "Error tidak diketahui"));
       }
     }
 
     async function addPaket() {
       const id = document.getElementById("paketId").value.trim();
-      const pickup_x = parseInt(document.getElementById("pickupX").value);
-      const pickup_y = parseInt(document.getElementById("pickupY").value);
-      const drop_x = parseInt(document.getElementById("dropX").value);
-      const drop_y = parseInt(document.getElementById("dropY").value);
-
-      if (!id || isNaN(pickup_x) || isNaN(pickup_y) || isNaN(drop_x) || isNaN(drop_y)) {
-        alert("Lengkapi semua data paket!");
+      if (!id) {
+        alert("Lengkapi ID paket!");
         return;
       }
     
       const res = await fetch("/add_paket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, pickup_x, pickup_y, drop_x, drop_y })
+        body: JSON.stringify({ id })
       });
     
       const data = await res.json();
       if (res.ok) {
-        alert(`Paket ${data.paket_id} berhasil ditambahkan`);
+        alert(`Paket ${data.paket_id} berhasil ditambahkan.\nPickup di: (${data.pickup_x}, ${data.pickup_y})\nDrop di: (${data.drop_x}, ${data.drop_y})`);
         loadGrid();
         document.getElementById("paketId").value = "";
-        document.getElementById("pickupX").value = "";
-        document.getElementById("pickupY").value = "";
-        document.getElementById("dropX").value = "";
-        document.getElementById("dropY").value = "";
       } else {
-        alert("Gagal tambah paket: " + data.detail);
+        alert("Gagal tambah paket: " + (data.detail || "Error tidak diketahui"));
       }
     }
 
@@ -198,7 +375,7 @@
       if (res.ok) {
         loadGrid();
       } else {
-        alert("Gagal gerak: " + data.detail);
+        alert("Gagal gerak: " + (data.detail || "Error tidak diketahui"));
       }
     }
 
@@ -217,23 +394,25 @@
         alert(data.message + (data.paket_id ? ` (ID: ${data.paket_id})` : ""));
         loadGrid();
       } else {
-        alert("Gagal " + action + ": " + data.detail);
+        alert("Gagal " + action + ": " + (data.detail || "Error tidak diketahui"));
       }
     }
 
     async function changeGridSize() {
-      const size = parseInt(document.getElementById("gridSizeSelect").value);
+      const newGridSize = parseInt(document.getElementById("gridSizeSelect").value);
       const res = await fetch("/grid_size", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ size })
+        body: JSON.stringify({ size: newGridSize })
       });
     
       const data = await res.json();
       if (res.ok) {
+        gridSize = newGridSize;
         loadGrid();
       } else {
-        alert("Gagal ubah ukuran peta: " + data.detail);
+        alert("Gagal ubah ukuran peta: " + (data.detail || "Error tidak diketahui"));
+        document.getElementById("gridSizeSelect").value = gridSize;
       }
     }
 
@@ -242,7 +421,7 @@
         method: "POST"
       });
       const data = await res.json();
-      console.log(data.tick_log);
+      console.log("Tick Log:", data.tick_log);
       loadGrid();
     }
 
@@ -252,12 +431,14 @@
 
       const html = `
         <ul>
-          <li><strong>Total Paket:</strong> ${data.total_paket}</li>
-          <li><strong>Paket Selesai:</strong> ${data.paket_selesai}</li>
-          <li><strong>Rata-rata Waktu Pengiriman:</strong> ${data.rata_rata_waktu_pengiriman} detik</li>
-          <li><strong>Rata-rata Langkah per Agen:</strong> ${data.rata_rata_langkah_per_agen}</li>
+          <li><strong>Total Paket Terdaftar:</strong> ${data.total_paket}</li>
+          <li><strong>Paket Selesai Diantar:</strong> ${data.paket_selesai}</li>
+          <li><strong>Rata-rata Waktu Pengiriman:</strong> ${data.rata_rata_waktu_pengiriman.toFixed(2)} detik</li>
+          <li><strong>Rata-rata Langkah per Kurir:</strong> ${data.rata_rata_langkah_per_agen.toFixed(2)}</li>
           <li><strong>Tabrakan Dihindari:</strong> ${data.tabrakan_dihindari}</li>
         </ul>
+        <h4>Log Aksi Terakhir:</h4>
+        <ul>${(data.log_aksi || []).map(log => `<li>${log}</li>`).join("")}</ul>
       `;
       
       document.getElementById("metrik").innerHTML = html;
